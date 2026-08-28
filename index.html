@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>مدرس في بيتك</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Cairo", sans-serif;
+        }
+
+        :root {
+            --primary: #4f46e5;
+            --secondary: #7c3aed;
+            --background: #080b1c;
+            --card: #111827;
+            --input: #0f172a;
+            --border: #334155;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            position: relative;
+            color: var(--text);
+            background: linear-gradient(135deg, #080b1c 0%, #0d1328 50%, #15113a 100%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        button, input, select {
+            font-family: inherit;
+        }
+
+        button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .background-grid {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 0;
+        }
+
+        .light {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .light-one {
+            width: 420px;
+            height: 420px;
+            top: -220px;
+            right: -150px;
+            background: radial-gradient(circle, rgba(79,70,229,.22), transparent 70%);
+        }
+
+        .light-two {
+            width: 420px;
+            height: 420px;
+            bottom: -240px;
+            left: -150px;
+            background: radial-gradient(circle, rgba(124,58,237,.20), transparent 70%);
+        }
+
+        .page {
+            display: none;
+            width: 100%;
+            height: calc(100% - 90px);
+            position: relative;
+            z-index: 1;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        .admin-button {
+            position: fixed;
+            top: 22px;
+            left: 22px;
+            width: 70px;
+            height: 70px;
+            border: 1px solid #29354a;
+            border-radius: 18px;
+            background: #111827;
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 8px 25px rgba(0,0,0,.25);
+            transition: transform .15s ease, border-color .15s ease;
+        }
+
+        .admin-button:hover {
+            transform: translateY(-3px);
+            border-color: #6366f1;
+        }
+
+        .admin-button i {
+            font-size: 20px;
+            color: #a5b4fc;
+        }
+
+        .admin-button span {
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .back-top-button {
+            position: fixed;
+            top: 22px;
+            right: 22px;
+            min-width: 125px;
+            height: 48px;
+            padding: 0 18px;
+            border: 1px solid #29354a;
+            border-radius: 14px;
+            background: #111827;
+            color: #e2e8f0;
+            cursor: pointer;
+            z-index: 100;
+            font-size: 13px;
+            font-weight: 700;
+            transition: transform .15s ease, border-color .15s ease;
+        }
+
+        .back-top-button:hover {
+            transform: translateY(-2px);
+            border-color: #6366f1;
+        }
+
+        .back-top-button i {
+            margin-left: 6px;
+            color: #a5b4fc;
+        }
+
+        .login-container, .admin-card {
+            width: calc(100% - 30px);
+            max-width: 450px;
+            padding: 30px 28px 22px;
+            position: relative;
+            z-index: 10;
+            background: #111827;
+            border: 1px solid #263247;
+            border-radius: 26px;
+            box-shadow: 0 25px 65px rgba(0,0,0,.38);
+        }
+
+        .admin-card {
+            max-width: 520px;
+            margin: auto;
+        }
+
+        .logo, .icon-box {
+            width: 65px;
+            height: 65px;
+            margin: 0 auto 12px;
+            border-radius: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            box-shadow: 0 8px 24px rgba(79,70,229,.30);
+        }
+
+        .logo i, .icon-box i {
+            font-size: 26px;
+            color: white;
+        }
+
+        .site-name, .admin-title {
+            text-align: center;
+            color: white;
+            font-size: 24px;
+            font-weight: 900;
+            margin-bottom: 2px;
+        }
+
+        .teacher-name, .subtitle {
+            text-align: center;
+            color: #a5b4fc;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label:not(.file-box) {
+            display: block;
+            margin-bottom: 6px;
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper > i {
+            position: absolute;
+            top: 50%;
+            right: 18px;
+            transform: translateY(-50%);
+            color: #818cf8;
+            font-size: 15px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        select, input[type="text"], input[type="password"] {
+            width: 100%;
+            height: 46px;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            outline: none;
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 0 48px 0 18px;
+            font-size: 13px;
+            transition: border-color .15s ease, background .15s ease;
+        }
+
+        select:focus, input:focus {
+            border-color: #6366f1;
+            background: #121c31;
+        }
+
+        select {
+            appearance: none;
+            cursor: pointer;
+        }
+
+        select option {
+            background: #111827;
+            color: white;
+        }
+
+        .select-arrow {
+            position: absolute;
+            top: 50%;
+            left: 18px;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            pointer-events: none;
+        }
+
+        .login-button, .button {
+            width: 100%;
+            height: 46px;
+            margin-top: 4px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            color: white;
+            font-size: 14px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            box-shadow: 0 10px 25px rgba(79,70,229,.25);
+            transition: transform .15s ease, opacity .15s ease;
+        }
+
+        .login-button:hover, .button:hover {
+            transform: translateY(-2px);
+            opacity: .96;
+        }
+
+        .save-button {
+            background: linear-gradient(135deg, #059669, #16a34a);
+            box-shadow: 0 10px 25px rgba(22,163,74,.20);
+        }
+
+        .answer-key-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 34px;
+            padding: 0 12px;
+            background: linear-gradient(135deg, #059669, #16a34a);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 15px rgba(22,163,74,.20);
+            transition: transform .15s ease, opacity .15s ease;
+            white-space: nowrap;
+        }
+
+        .answer-key-button:hover {
+            transform: translateY(-2px);
+            opacity: .96;
+        }
+
+        .message {
+            display: none;
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .message.error { display: block; color: #fecaca; background: rgba(239,68,68,.10); border: 1px solid rgba(239,68,68,.25); }
+        .message.success { display: block; color: #86efac; background: rgba(34,197,94,.10); border: 1px solid rgba(34,197,94,.25); }
+        .message.loading { display: block; color: #c7d2fe; background: rgba(79,70,229,.10); border: 1px solid rgba(99,102,241,.25); }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 12px;
+            color: #64748b;
+            font-size: 11px;
+        }
+
+        .site-footer {
+            width: 100%;
+            height: 90px;
+            flex-shrink: 0;
+            background: rgba(11, 15, 30, 0.95);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            position: relative;
+            z-index: 100;
+            font-size: 11px;
+            color: #ffffff;
+            padding: 0 10px;
+            text-align: center;
+        }
+
+        .site-footer div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .site-footer span {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .site-footer a {
+            color: #818cf8;
+            text-decoration: none;
+            font-weight: 700;
+            unicode-bidi: embed;
+        }
+
+        .site-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .file-box {
+            width: 100%;
+            min-height: 90px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 1px dashed #475569;
+            border-radius: 14px;
+            background: #0f172a;
+            cursor: pointer;
+            transition: border-color .15s ease, background .15s ease;
+        }
+
+        .file-box:hover {
+            border-color: #6366f1;
+            background: #121c31;
+        }
+
+        .file-box i {
+            color: #818cf8;
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .file-title {
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 2px;
+        }
+
+        .file-help {
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        #excelFile, #answerFile {
+            display: none;
+        }
+
+        .selected-file {
+            display: none;
+            margin-top: 6px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: rgba(79,70,229,.10);
+            border: 1px solid rgba(99,102,241,.25);
+            color: #c7d2fe;
+            font-size: 11px;
+            word-break: break-word;
+        }
+
+        .selected-file.show { display: block; }
+
+        .current-file {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            background: #0f172a;
+            border: 1px solid #263247;
+        }
+
+        .current-file-title {
+            margin-bottom: 4px;
+            color: #cbd5e1;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        #currentFileName, #currentAnswerFileName {
+            color: #94a3b8;
+            font-size: 11px;
+            word-break: break-word;
+        }
+
+        .logout-button {
+            width: 100%;
+            margin-top: 10px;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .logout-button:hover { color: white; }
+
+        .student-page-content {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+            margin: auto;
+        }
+
+        .student-dashboard {
+            position: relative;
+            width: 100%;
+            background: #111827;
+            border: 1px solid #263247;
+            border-radius: 22px;
+            padding: 24px;
+            box-shadow: 0 25px 65px rgba(0,0,0,.38);
+        }
+
+        .student-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 18px;
+            margin-bottom: 18px;
+            border-bottom: 1px solid #263247;
+            flex-wrap: wrap;
+        }
+
+        .student-info-main {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .student-avatar {
+            width: 55px;
+            height: 55px;
+            flex-shrink: 0;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            box-shadow: 0 8px 24px rgba(79,70,229,.25);
+        }
+
+        .student-avatar i { font-size: 24px; color: white; }
+        .student-welcome { color: #94a3b8; font-size: 12px; margin-bottom: 2px; }
+        .student-name { color: white; font-size: 20px; font-weight: 900; }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .student-grade-badge {
+            padding: 8px 14px;
+            border-radius: 10px;
+            color: #c7d2fe;
+            background: rgba(79,70,229,.12);
+            border: 1px solid rgba(99,102,241,.25);
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .data-title {
+            margin-bottom: 14px;
+            color: #e2e8f0;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .data-title i { color: #818cf8; margin-left: 6px; }
+
+        .student-data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .data-item {
+            min-height: 95px;
+            padding: 14px;
+            border-radius: 14px;
+            background: #0f172a;
+            border: 1px solid #263247;
+            transition: transform .15s ease, border-color .15s ease;
+        }
+
+        .data-item:hover { transform: translateY(-2px); border-color: #475569; }
+        .data-label { color: #94a3b8; font-size: 11px; font-weight: 700; margin-bottom: 8px; word-break: break-word; }
+        .data-value { color: #f8fafc; font-size: 17px; font-weight: 900; word-break: break-word; }
+
+        .student-empty {
+            grid-column: 1 / -1;
+            padding: 25px;
+            text-align: center;
+            border-radius: 14px;
+            background: #0f172a;
+            border: 1px solid #263247;
+            color: #94a3b8;
+        }
+
+        .grade-circle {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 900;
+            border: 2px solid;
+        }
+
+        .grade-red { color: #f87171; border-color: #ef4444; background: rgba(239,68,68,.12); }
+        .grade-yellow { color: #facc15; border-color: #eab308; background: rgba(234,179,8,.12); }
+        .grade-blue { color: #4ade80; border-color: #22c55e; background: rgba(34,197,94,.12); }
+        .grade-green { color: #60a5fa; border-color: #3b82f6; background: rgba(59,130,246,.12); }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 6, 15, 0.82);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            max-height: 85vh;
+            background: #111827;
+            border: 1px solid #263247;
+            border-radius: 22px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 65px rgba(0,0,0,.5);
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            background: #0f172a;
+            border-bottom: 1px solid #263247;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            color: white;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-close:hover {
+            color: white;
+        }
+
+        .modal-body {
+            padding: 18px;
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .modal-body img {
+            max-width: 100%;
+            max-height: 65vh;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        .modal-body iframe {
+            width: 100%;
+            height: 65vh;
+            border: none;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="background-grid"></div>
+    <div class="light light-one"></div>
+    <div class="light light-two"></div>
+
+    <!-- صفحة تسجيل دخول الطالب -->
+    <section class="page active" id="studentPage">
+        <button type="button" class="admin-button" id="adminButton">
+            <i class="fa-solid fa-user-tie"></i>
+            <span>أدمن</span>
+        </button>
+
+        <main class="login-container">
+            <div class="logo">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <h1 class="site-name">مدرس في بيتك</h1>
+            <p class="teacher-name">م/محمد حامد</p>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="grade">الصف الدراسي</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-school"></i>
+                        <select id="grade">
+                            <option value="">اختر الصف الدراسي</option>
+                            <option value="first">الصف الأول الإعدادي</option>
+                            <option value="second">الصف الثاني الإعدادي</option>
+                            <option value="third">الصف الثالث الإعدادي</option>
+                        </select>
+                        <span class="select-arrow"><i class="fa-solid fa-chevron-down"></i></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="studentCode">كود الطالب (اختياري)</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-key"></i>
+                        <input type="text" id="studentCode" placeholder="اكتب الكود الخاص بك" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="studentNameInput">اسم الطالب (اختياري)</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="studentNameInput" placeholder="اكتب اسمك بالكامل أو جزء منه" autocomplete="off">
+                    </div>
+                </div>
+
+                <button type="submit" class="login-button" id="studentLoginButton">
+                    <i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول
+                </button>
+                <div id="studentMessage" class="message"></div>
+            </form>
+            <p class="footer-text">جميع الحقوق محفوظة © مدرس في بيتك</p>
+        </main>
+    </section>
+
+    <!-- صفحة دخول الأدمن -->
+    <section class="page" id="adminLoginPage">
+        <button type="button" class="back-top-button" id="backFromAdminLogin">
+            <i class="fa-solid fa-arrow-right"></i> رجوع للرئيسية
+        </button>
+
+        <main class="admin-card">
+            <div class="icon-box"><i class="fa-solid fa-user-shield"></i></div>
+            <h1 class="admin-title">لوحة الإدارة</h1>
+            <p class="subtitle">قم بإدخال كلمة المرور للمتابعة</p>
+
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label for="adminPassword">كلمة مرور الأدمن</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="adminPassword" placeholder="اكتب كلمة المرور">
+                    </div>
+                </div>
+                <button type="submit" class="button">
+                    <i class="fa-solid fa-right-to-bracket"></i> دخول لوحة الإدارة
+                </button>
+                <div id="adminMessage" class="message"></div>
+            </form>
+        </main>
+    </section>
+
+    <!-- صفحة رفع ملف Excel ونموذج الإجابة -->
+    <section class="page" id="adminUploadPage">
+        <button type="button" class="back-top-button" id="backFromUpload">
+            <i class="fa-solid fa-arrow-right"></i> رجوع للرئيسية
+        </button>
+
+        <main class="admin-card">
+            <div class="icon-box"><i class="fa-solid fa-file-excel"></i></div>
+            <h1 class="admin-title">تحديث ملف الدرجات ونماذج الإجابة</h1>
+            <p class="subtitle">قم برفع الملفات المطلوبة ثم اضغط حفظ</p>
+
+            <div class="form-group">
+                <label>ملف درجات الطلاب (Excel - عام لكل الصفوف أو ملف موحد)</label>
+                <label for="excelFile" class="file-box">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <div class="file-title">اختر ملف Excel</div>
+                    <div class="file-help">XLSX / XLS</div>
+                </label>
+                <input type="file" id="excelFile" accept=".xlsx,.xls">
+                <div class="selected-file" id="selectedFile">
+                    <i class="fa-solid fa-file-excel"></i> <span id="selectedFileName"></span>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 8px;">
+                <label for="answerGradeSelect">اختر الصف المراد رفع نموذج إجابة له</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-school"></i>
+                    <select id="answerGradeSelect">
+                        <option value="first">الصف الأول الإعدادي</option>
+                        <option value="second">الصف الثاني الإعدادي</option>
+                        <option value="third">الصف الثالث الإعدادي</option>
+                    </select>
+                    <span class="select-arrow"><i class="fa-solid fa-chevron-down"></i></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>ملف نموذج الإجابة للصف المختار (صورة أو ملف)</label>
+                <label for="answerFile" class="file-box">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <div class="file-title">اختر نموذج الإجابة للصف</div>
+                    <div class="file-help">صور / PDF / أي ملف مهما كان</div>
+                </label>
+                <input type="file" id="answerFile">
+                <div class="selected-file" id="selectedAnswerFile">
+                    <i class="fa-solid fa-file"></i> <span id="selectedAnswerFileName"></span>
+                </div>
+            </div>
+
+            <button type="button" class="button save-button" id="saveFileButton" style="margin-top:8px;">
+                <i class="fa-solid fa-floppy-disk"></i> حفظ وتحديث الملفات بالكامل
+            </button>
+
+            <div id="fileMessage" class="message"></div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div class="current-file">
+                    <div class="current-file-title"><i class="fa-solid fa-circle-check"></i> ملف الدرجات الحالي</div>
+                    <div id="currentFileName">جاري التحقق...</div>
+                </div>
+                <div class="current-file">
+                    <div class="current-file-title"><i class="fa-solid fa-circle-check"></i> نماذج الإجابة الحالية</div>
+                    <div id="currentAnswerFileName">جاري التحقق...</div>
+                </div>
+            </div>
+
+            <button type="button" class="logout-button" id="logoutButton">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> تسجيل الخروج
+            </button>
+        </main>
+    </section>
+
+    <!-- واجهة بيانات الطالب -->
+    <section class="page" id="studentDashboardPage">
+        <button type="button" class="back-top-button" id="backFromStudentDashboard">
+            <i class="fa-solid fa-arrow-right"></i> تسجيل الخروج
+        </button>
+
+        <div class="student-page-content">
+            <main class="student-dashboard">
+                <div class="student-header">
+                    <div class="student-info-main">
+                        <div class="student-avatar"><i class="fa-solid fa-user-graduate"></i></div>
+                        <div>
+                            <div class="student-welcome">مرحبًا بك</div>
+                            <div class="student-name" id="dashboardStudentName">الطالب</div>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <div id="studentAnswerKeyContainer"></div>
+                        <div class="student-grade-badge" id="dashboardStudentGrade">الصف الدراسي</div>
+                    </div>
+                </div>
+
+                <h2 class="data-title"><i class="fa-solid fa-chart-column"></i> بياناتك ودرجاتك</h2>
+                <div class="student-data-grid" id="studentDataGrid"></div>
+            </main>
+        </div>
+    </section>
+
+    <!-- نافذة منبثقة لعرض نموذج الإجابة -->
+    <div class="modal-overlay" id="answerModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">نموذج الإجابة</div>
+                <button type="button" class="modal-close" id="closeModalButton"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- التذييل (Footer) مع تعديل كلمة البشمهندس بالألف واللام واللون الأبيض -->
+    <footer class="site-footer">
+        <div>تصميم: <span>البشمهندس عمر محمد</span> - <a href="tel:01066081363">01066081363</a></div>
+        <div>تصميم: <span>البشمهندس أحمد تامر</span> - <a href="tel:01022557504">01022557504</a></div>
+    </footer>
+
+    <script>
+        const SUPABASE_URL = "https://chgysnmeiajcdakqdtpx.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_Rc3MJ9DUoj_6RaTnZSyRCg_pSuSBwTi";
+
+        const supabaseClient = SUPABASE_URL.startsWith("http") && !SUPABASE_ANON_KEY.includes("PUT_YOUR")
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+            : null;
+
+        const studentPage = document.getElementById("studentPage");
+        const adminLoginPage = document.getElementById("adminLoginPage");
+        const adminUploadPage = document.getElementById("adminUploadPage");
+        const studentDashboardPage = document.getElementById("studentDashboardPage");
+
+        const adminButton = document.getElementById("adminButton");
+        const backFromAdminLogin = document.getElementById("backFromAdminLogin");
+        const backFromUpload = document.getElementById("backFromUpload");
+        const backFromStudentDashboard = document.getElementById("backFromStudentDashboard");
+
+        const loginForm = document.getElementById("loginForm");
+        const grade = document.getElementById("grade");
+        const studentCode = document.getElementById("studentCode");
+        const studentNameInput = document.getElementById("studentNameInput");
+        const studentMessage = document.getElementById("studentMessage");
+        const studentLoginButton = document.getElementById("studentLoginButton");
+
+        const adminLoginForm = document.getElementById("adminLoginForm");
+        const adminPassword = document.getElementById("adminPassword");
+        const adminMessage = document.getElementById("adminMessage");
+
+        const excelFile = document.getElementById("excelFile");
+        const selectedFile = document.getElementById("selectedFile");
+        const selectedFileName = document.getElementById("selectedFileName");
+
+        const answerGradeSelect = document.getElementById("answerGradeSelect");
+        const answerFile = document.getElementById("answerFile");
+        const selectedAnswerFile = document.getElementById("selectedAnswerFile");
+        const selectedAnswerFileName = document.getElementById("selectedAnswerFileName");
+
+        const saveFileButton = document.getElementById("saveFileButton");
+        const fileMessage = document.getElementById("fileMessage");
+        const currentFileName = document.getElementById("currentFileName");
+        const currentAnswerFileName = document.getElementById("currentAnswerFileName");
+        const logoutButton = document.getElementById("logoutButton");
+
+        const dashboardStudentName = document.getElementById("dashboardStudentName");
+        const dashboardStudentGrade = document.getElementById("dashboardStudentGrade");
+        const studentDataGrid = document.getElementById("studentDataGrid");
+        const studentAnswerKeyContainer = document.getElementById("studentAnswerKeyContainer");
+
+        const answerModal = document.getElementById("answerModal");
+        const closeModalButton = document.getElementById("closeModalButton");
+        const modalBody = document.getElementById("modalBody");
+        const modalTitle = document.getElementById("modalTitle");
+
+        const gradeInfo = {
+            first: { sheet: "1ع", name: "الصف الأول الإعدادي" },
+            second: { sheet: "2ع", name: "الصف الثاني الإعدادي" },
+            third: { sheet: "3ع", name: "الصف الثالث الإعدادي" }
+        };
+
+        function showPage(page) {
+            document.querySelectorAll(".page").forEach(item => item.classList.remove("active"));
+            page.classList.add("active");
+        }
+
+        function showMessage(element, text, type) {
+            element.textContent = text;
+            element.className = "message " + type;
+        }
+
+        function hideMessage(element) {
+            element.textContent = "";
+            element.className = "message";
+        }
+
+        adminButton.addEventListener("click", () => {
+            showPage(adminLoginPage);
+            hideMessage(adminMessage);
+            adminPassword.value = "";
+            setTimeout(() => adminPassword.focus(), 50);
+        });
+
+        backFromAdminLogin.addEventListener("click", () => {
+            showPage(studentPage);
+            adminPassword.value = "";
+            hideMessage(adminMessage);
+        });
+
+        backFromUpload.addEventListener("click", () => {
+            showPage(studentPage);
+            excelFile.value = "";
+            answerFile.value = "";
+            selectedFile.classList.remove("show");
+            selectedAnswerFile.classList.remove("show");
+            hideMessage(fileMessage);
+        });
+
+        backFromStudentDashboard.addEventListener("click", () => {
+            showPage(studentPage);
+            studentCode.value = "";
+            studentNameInput.value = "";
+            studentDataGrid.innerHTML = "";
+            studentAnswerKeyContainer.innerHTML = "";
+            hideMessage(studentMessage);
+        });
+
+        closeModalButton.addEventListener("click", () => {
+            answerModal.classList.remove("active");
+            modalBody.innerHTML = "";
+        });
+
+        answerModal.addEventListener("click", (e) => {
+            if (e.target === answerModal) {
+                answerModal.classList.remove("active");
+                modalBody.innerHTML = "";
+            }
+        });
+
+        const SUPABASE_EXCEL_TABLE = "teacher_excel_files";
+        const SUPABASE_EXCEL_ID = "currentExcelFile";
+
+        function dataUrlToBlob(dataUrl, defaultType) {
+            if (!dataUrl) return null;
+            const parts = String(dataUrl).split(",");
+            const base64 = parts.pop();
+            let type = defaultType || "application/octet-stream";
+            if (parts.length > 0 && parts[0].includes(":")) {
+                const arrMatch = parts[0].match(/:(.*?);/);
+                if (arrMatch && arrMatch[1]) {
+                    type = arrMatch[1];
+                }
+            }
+            try {
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                return new Blob([bytes], { type: type });
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function getCurrentFilesData() {
+            if (!supabaseClient) throw new Error("Supabase غير جاهز");
+            const { data, error } = await supabaseClient
+                .from(SUPABASE_EXCEL_TABLE)
+                .select("*")
+                .eq("id", SUPABASE_EXCEL_ID)
+                .maybeSingle();
+            if (error) throw error;
+            if (!data) return null;
+            return {
+                file: data.file_data && data.file_data !== "EMPTY" ? dataUrlToBlob(data.file_data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") : null,
+                name: data.file_name || "grades.xlsx",
+                answers: {
+                    first: { name: data.ans_name_first || "", blob: data.ans_data_first ? dataUrlToBlob(data.ans_data_first) : null },
+                    second: { name: data.ans_name_second || "", blob: data.ans_data_second ? dataUrlToBlob(data.ans_data_second) : null },
+                    third: { name: data.ans_name_third || "", blob: data.ans_data_third ? dataUrlToBlob(data.ans_data_third) : null }
+                }
+            };
+        }
+
+        async function showCurrentFile() {
+            if (!supabaseClient) {
+                currentFileName.textContent = "تعذر الاتصال بـ Supabase.";
+                currentAnswerFileName.textContent = "تعذر الاتصال.";
+                return;
+            }
+            try {
+                const savedData = await getCurrentFilesData();
+                if (savedData) {
+                    currentFileName.textContent = savedData.name || "لا يوجد ملف";
+                    let ansText = [];
+                    if (savedData.answers.first.name) ansText.push(`1ع: ${savedData.answers.first.name}`);
+                    if (savedData.answers.second.name) ansText.push(`2ع: ${savedData.answers.second.name}`);
+                    if (savedData.answers.third.name) ansText.push(`3ع: ${savedData.answers.third.name}`);
+                    currentAnswerFileName.textContent = ansText.length > 0 ? ansText.join(" | ") : "لا توجد نماذج مرفوعة";
+                } else {
+                    currentFileName.textContent = "لا يوجد ملف محفوظ.";
+                    currentAnswerFileName.textContent = "لا توجد نماذج محفوظة.";
+                }
+            } catch (error) {
+                console.error(error);
+                currentFileName.textContent = "تعذر القراءة.";
+                currentAnswerFileName.textContent = "تعذر القراءة.";
+            }
+        }
+
+        showCurrentFile();
+
+        // دالة لتنحيف وتوحيد النص (تجاهل الهمزات والتشكيل والمسافات الزائدة)
+        function normalizeText(text) {
+            if (!text) return "";
+            return String(text)
+                .trim()
+                .toLowerCase()
+                .replace(/[\u064b-\u0652]/g, "") // إزالة التشكيل
+                .replace(/[إأآا]/g, "ا")       // توحيد الألفات
+                .replace(/ة/g, "ه")            // توحيد الهاء والتاء المربوطة
+                .replace(/ى/g, "ي")            // توحيد الياء والألف اللينة
+                .replace(/\s+/g, " ");         // تقليل المسافات المتعددة لمسافة واحدة
+        }
+
+        loginForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            hideMessage(studentMessage);
+
+            if (grade.value === "") {
+                showMessage(studentMessage, "من فضلك اختر الصف الدراسي أولاً.", "error");
+                return;
+            }
+
+            const enteredCode = String(studentCode.value).trim();
+            const enteredName = String(studentNameInput.value).trim();
+
+            if (enteredCode === "" && enteredName === "") {
+                showMessage(studentMessage, "من فضلك اكتب كود الطالب أو اسم الطالب للبحث.", "error");
+                return;
+            }
+
+            studentLoginButton.disabled = true;
+            studentLoginButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري البحث...';
+            showMessage(studentMessage, "جاري قراءة بياناتك...", "loading");
+
+            try {
+                const savedFileData = await getCurrentFilesData();
+
+                if (!savedFileData || !savedFileData.file) {
+                    showMessage(studentMessage, "لا يوجد ملف درجات مرفوع حاليًا.", "error");
+                    return;
+                }
+
+                const arrayBuffer = await savedFileData.file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: "array" });
+                const selectedGradeInfo = gradeInfo[grade.value];
+                const sheet = workbook.Sheets[selectedGradeInfo.sheet];
+
+                if (!sheet) {
+                    showMessage(studentMessage, "لم يتم العثور على بيانات هذا الصف داخل الملف.", "error");
+                    return;
+                }
+
+                const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+                const normalizedEnteredName = normalizeText(enteredName);
+
+                const student = rows.find(row => {
+                    let codeMatch = false;
+                    let nameMatch = false;
+
+                    // فحص كل الأعمدة في الصف للبحث عن الكود أو الاسم بمرونة تامة
+                    for (let key in row) {
+                        const val = String(row[key] ?? "").trim();
+                        const cleanKey = normalizeText(key);
+
+                        // التحقق من الكود
+                        if (enteredCode !== "" && (cleanKey.includes("كود") || cleanKey.includes("code"))) {
+                            if (val === enteredCode) codeMatch = true;
+                        }
+
+                        // التحقق من الاسم (يبحث في أي عمود يحتوي على اسم أو حتى في كل الأعمدة لو العمود مش مسمى بكلمة اسم)
+                        if (normalizedEnteredName !== "") {
+                            const normalizedVal = normalizeText(val);
+                            if (normalizedVal.includes(normalizedEnteredName)) {
+                                nameMatch = true;
+                            }
+                        }
+                    }
+
+                    if (enteredCode !== "" && enteredName !== "") {
+                        return codeMatch && nameMatch;
+                    } else if (enteredCode !== "") {
+                        return codeMatch;
+                    } else if (enteredName !== "") {
+                        return nameMatch;
+                    }
+                    return false;
+                });
+
+                if (!student) {
+                    showMessage(studentMessage, "لم يتم العثور على طالب بهذه البيانات في هذا الصف.", "error");
+                    return;
+                }
+
+                showStudentData(student, selectedGradeInfo.name, grade.value, savedFileData);
+                hideMessage(studentMessage);
+                showPage(studentDashboardPage);
+            } catch (error) {
+                console.error(error);
+                showMessage(studentMessage, "حدث خطأ أثناء قراءة ملف الدرجات.", "error");
+            } finally {
+                studentLoginButton.disabled = false;
+                studentLoginButton.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول';
+            }
+        });
+
+        function showStudentData(student, gradeName, gradeKey, savedFileData) {
+            // محاولة إيجاد اسم الطالب من أي عمود يقترب معناه من الاسم أو أول عمود نصي
+            let studentName = "الطالب";
+            for (let key in student) {
+                const cleanKey = normalizeText(key);
+                if (cleanKey.includes("اسم") || cleanKey.includes("name")) {
+                    if (student[key]) {
+                        studentName = student[key];
+                        break;
+                    }
+                }
+            }
+            if (studentName === "الطالب") {
+                // لو ملقاش عمود اسمه صريح، ياخد أول قيمة نصية غير الكود
+                for (let key in student) {
+                    if (typeof student[key] === "string" && student[key].trim() !== "" && !normalizeText(key).includes("كود")) {
+                        studentName = student[key];
+                        break;
+                    }
+                }
+            }
+
+            dashboardStudentName.textContent = studentName;
+            dashboardStudentGrade.textContent = gradeName;
+            studentDataGrid.innerHTML = "";
+            studentAnswerKeyContainer.innerHTML = "";
+
+            const keys = Object.keys(student);
+            if (keys.length === 0) {
+                studentDataGrid.innerHTML = '<div class="student-empty">لا توجد بيانات متاحة لهذا الطالب.</div>';
+                return;
+            }
+
+            const examStartIndex = keys.findIndex(key => String(key).trim().includes("اختبار"));
+
+            keys.forEach((key, index) => {
+                const cleanKey = String(key).trim();
+                let value = student[key];
+                if (value === "" || value === null || value === undefined) value = "-";
+
+                const item = document.createElement("div");
+                item.className = "data-item";
+
+                const label = document.createElement("div");
+                label.className = "data-label";
+                label.textContent = key;
+
+                const dataValue = document.createElement("div");
+                dataValue.className = "data-value";
+
+                const numericValue = Number(String(value).replace(",", ".").trim());
+                const isGradeColumn = examStartIndex !== -1 && index >= examStartIndex;
+
+                if (isGradeColumn && value !== "-" && !isNaN(numericValue) && numericValue >= 0 && numericValue <= 10) {
+                    const gradeCircle = document.createElement("div");
+                    gradeCircle.className = "grade-circle";
+                    if (numericValue < 5) gradeCircle.classList.add("grade-red");
+                    else if (numericValue === 5) gradeCircle.classList.add("grade-yellow");
+                    else if (numericValue > 5 && numericValue < 10) gradeCircle.classList.add("grade-green");
+                    else if (numericValue === 10) gradeCircle.classList.add("grade-blue");
+                    gradeCircle.textContent = String(value);
+                    dataValue.appendChild(gradeCircle);
+                } else {
+                    dataValue.textContent = String(value);
+                }
+
+                item.appendChild(label);
+                item.appendChild(dataValue);
+                studentDataGrid.appendChild(item);
+            });
+
+            const gradeAnswerData = savedFileData && savedFileData.answers ? savedFileData.answers[gradeKey] : null;
+
+            if (gradeAnswerData && gradeAnswerData.blob && gradeAnswerData.name) {
+                const answerBtn = document.createElement("button");
+                answerBtn.type = "button";
+                answerBtn.className = "answer-key-button";
+                answerBtn.innerHTML = `<i class="fa-solid fa-eye"></i> نموذج الإجابة`;
+                
+                answerBtn.addEventListener("click", () => {
+                    const fileUrl = URL.createObjectURL(gradeAnswerData.blob);
+                    const fileType = gradeAnswerData.blob.type || "";
+
+                    if (fileType.includes("pdf") || (!fileType.includes("image") && !fileType.startsWith("image/"))) {
+                        window.open(fileUrl, "_blank");
+                        return;
+                    }
+
+                    modalTitle.textContent = `نموذج الإجابة: ${gradeAnswerData.name}`;
+                    modalBody.innerHTML = "";
+                    
+                    if (fileType.includes("image") || fileType.startsWith("image/")) {
+                        const img = document.createElement("img");
+                        img.src = fileUrl;
+                        modalBody.appendChild(img);
+                    } else {
+                        const div = document.createElement("div");
+                        div.style.textAlign = "center";
+                        div.innerHTML = `<p style="color: #cbd5e1; margin-bottom: 15px;">يمكنك معاينة وتحميل الملف:</p><a href="${fileUrl}" download="${gradeAnswerData.name}" class="answer-key-button" style="display:inline-block; width:auto; padding:0 25px; text-decoration:none;">تحميل الملف</a>`;
+                        modalBody.appendChild(div);
+                    }
+
+                    answerModal.classList.add("active");
+                });
+
+                studentAnswerKeyContainer.appendChild(answerBtn);
+            }
+        }
+
+        adminLoginForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            hideMessage(adminMessage);
+
+            if (adminPassword.value === "admin") {
+                adminPassword.value = "";
+                showPage(adminUploadPage);
+                showCurrentFile();
+            } else {
+                showMessage(adminMessage, "كلمة المرور غير صحيحة.", "error");
+                adminPassword.value = "";
+                adminPassword.focus();
+            }
+        });
+
+        excelFile.addEventListener("change", () => {
+            const file = excelFile.files[0];
+            if (!file) return;
+            selectedFileName.textContent = file.name;
+            selectedFile.classList.add("show");
+        });
+
+        answerFile.addEventListener("change", () => {
+            const file = answerFile.files[0];
+            if (!file) return;
+            selectedAnswerFileName.textContent = file.name;
+            selectedAnswerFile.classList.add("show");
+        });
+
+        saveFileButton.addEventListener("click", async () => {
+            const file = excelFile.files[0];
+            const ansFile = answerFile.files[0];
+            const targetGradeForAnswer = answerGradeSelect.value;
+
+            if (!supabaseClient) {
+                showMessage(fileMessage, "Supabase غير متصل.", "error");
+                return;
+            }
+
+            saveFileButton.disabled = true;
+            saveFileButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ...';
+
+            try {
+                const currentData = await getCurrentFilesData();
+                
+                let excelBase64 = null;
+                let excelName = currentData ? currentData.name : "grades.xlsx";
+                if (file) {
+                    excelBase64 = await new Promise((resolve) => {
+                        constReader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(file);
+                    });
+                    excelName = file.name;
+                }
+
+                let answerBase64 = null;
+                let answerName = "";
+                if (ansFile) {
+                    answerBase64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(ansFile);
+                    });
+                    answerName = ansFile.name;
+                }
+
+                const updatePayload = {
+                    id: SUPABASE_EXCEL_ID,
+                    updated_at: new Date().toISOString()
+                };
+
+                if (excelBase64) {
+                    updatePayload.file_data = excelBase64;
+                    updatePayload.file_name = excelName;
+                }
+
+                if (answerBase64) {
+                    if (targetGradeForAnswer === "first") {
+                        updatePayload.ans_data_first = answerBase64;
+                        updatePayload.ans_name_first = answerName;
+                    } else if (targetGradeForAnswer === "second") {
+                        updatePayload.ans_data_second = answerBase64;
+                        updatePayload.ans_name_second = answerName;
+                    } else if (targetGradeForAnswer === "third") {
+                        updatePayload.ans_data_third = answerBase64;
+                        updatePayload.ans_name_third = answerName;
+                    }
+                }
+
+                const { error } = await supabaseClient
+                    .from(SUPABASE_EXCEL_TABLE)
+                    .upsert(updatePayload);
+
+                if (error) throw error;
+
+                showMessage(fileMessage, "تم حفظ الملفات وتحديثها بنجاح ✓", "success");
+                showCurrentFile();
+
+                excelFile.value = "";
+                answerFile.value = "";
+                selectedFile.classList.remove("show");
+                selectedAnswerFile.classList.remove("show");
+            } catch (error) {
+                console.error(error);
+                showMessage(fileMessage, "حدث خطأ أثناء الحفظ على Supabase.", "error");
+            } finally {
+                saveFileButton.disabled = false;
+                saveFileButton.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> حفظ وتحديث الملفات بالكامل';
+            }
+        });
+
+        logoutButton.addEventListener("click", () => {
+            showPage(studentPage);
+            adminPassword.value = "";
+            hideMessage(adminMessage);
+            hideMessage(fileMessage);
+            excelFile.value = "";
+            answerFile.value = "";
+            selectedFile.classList.remove("show");
+            selectedAnswerFile.classList.remove("show");
+        });
+    </script>
+
+</body>
+</html>
